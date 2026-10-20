@@ -36,7 +36,6 @@ def jacobi_rotation_method(A, eps, n, max_iter=10000, verbose=True):
     while off_diag_norm() >= eps and k < max_iter:
         k += 1
 
-        # --- Шаг 1: найти максимальный по модулю недиагональный элемент ---
         max_val = 0.0
         p, q = 0, 1
         for i in range(n - 1):
@@ -46,8 +45,6 @@ def jacobi_rotation_method(A, eps, n, max_iter=10000, verbose=True):
                     p, q = i, j
 
 
-        # --- Шаг 2: угол поворота ---
-        # phi = 0.5 * arctan( 2 a_pq / (a_pp - a_qq) ); если a_pp = a_qq, то phi = pi/4
         if abs(A[p, p] - A[q, q]) < 1e-15:
             phi = np.pi / 4
         else:
@@ -56,22 +53,18 @@ def jacobi_rotation_method(A, eps, n, max_iter=10000, verbose=True):
         c = np.cos(phi)
         s = np.sin(phi)
 
-        # --- Справа: A ← A · U (обновляются столбцы p, q) ---
         for i in range(n):
             aip = A[i, p]
             aiq = A[i, q]
-            A[i, p] = c * aip + s * aiq    # ← +s
-            A[i, q] = -s * aip + c * aiq   # ← -s
+            A[i, p] = c * aip + s * aiq
+            A[i, q] = -s * aip + c * aiq
 
-        # --- Слева: A ← U^T · A (обновляются строки p, q) ---
-        # U^T = [[c, s], [-s, c]]
         for j in range(n):
             apj = A[p, j]
             aqj = A[q, j]
-            A[p, j] = c * apj + s * aqj    # ← +s
-            A[q, j] = -s * apj + c * aqj   # ← -s
+            A[p, j] = c * apj + s * aqj
+            A[q, j] = -s * apj + c * aqj  
 
-        # --- Собственные векторы: V ← V · U (столбцы p, q) ---
         for i in range(n):
             vip = V[i, p]
             viq = V[i, q]
