@@ -84,7 +84,11 @@ def jacobi_rotation_method(A, eps, n, max_iter=10000, verbose=True):
 
 
 if __name__ == "__main__":
-    A, eps, n = read_symmetric_matrix("D:/learning/numeric_methods/Lab1/1.4/input.txt")
+    import os
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    filename = os.path.join(script_dir, "input.txt")
+    A, eps, n = read_symmetric_matrix(filename)
 
     print("=" * 60)
     print("Исходные данные:")

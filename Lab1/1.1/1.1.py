@@ -82,7 +82,11 @@ def triangular_determinant(M, n):
 
 
 if __name__ == "__main__":
-    A, b = read_system_from_file("D:/learning/numeric_methods/Lab1/1.1/input.txt")
+    import os
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    filename = os.path.join(script_dir, "input.txt")
+    A, b = read_system_from_file(filename)
     n = A.shape[0]
 
     L, U, P, perm = LUP(A, n)

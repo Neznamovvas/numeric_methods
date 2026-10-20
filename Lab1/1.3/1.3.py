@@ -147,7 +147,11 @@ def seidel(A, b, eps, n, max_iter=10000, verbose=True):
 
 
 if __name__ == "__main__":
-    A, b, eps, n = read_system("D:/learning/numeric_methods/Lab1/1.3/input.txt")
+    import os
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    filename = os.path.join(script_dir, "input.txt")
+    A, b, eps, n = read_system(filename)
 
     print("=" * 60)
     print("Исходные данные:")

@@ -19,7 +19,6 @@ def read_matrix(filename):
 
 
 def householder_vector(b):
-    n = len(b)
     v = b.copy()
     norm_b = np.sqrt(np.sum(b ** 2))
     if b[0] >= 0:
@@ -29,56 +28,25 @@ def householder_vector(b):
     return v
 
 
-def householder_apply_left(H_vec, A, k):
-    n = A.shape[0]
-    v = H_vec[k:]
-    A_sub = A[k:, :]
-
-    vTv = v @ v
-    if vTv < 1e-15:
-        return A
-
-    vTA = v @ A_sub
-
-    A_new = A.copy()
-    A_new[k:, :] = A_sub - (2.0 / vTv) * np.outer(v, vTA)
-    return A_new
-
-
-def householder_apply_right(A, H_vec, k):
-    n = A.shape[0]
-    v = H_vec[k:]
-    A_sub = A[:, k:]
-
-    vTv = v @ v
-    if vTv < 1e-15:
-        return A
-
-    Av = A_sub @ v
-
-    A_new = A.copy()
-    A_new[:, k:] = A_sub - (2.0 / vTv) * np.outer(Av, v)
-    return A_new
-
 
 def qr_householder(A, n):
     R = A.astype(float, copy=True)
-    H_vectors = []
-
+    Q = np.eye(n)
+    
     for k in range(n - 1):
         b = R[k:, k].copy()
         v = householder_vector(b)
-        R = householder_apply_left(v, R, k)
-        H_vectors.append((k, v))
-
-    Q = np.eye(n)
-    for k, v in reversed(H_vectors):
-        Q = householder_apply_right(Q, v, k)
-
+        vTv = v @ v
+        if vTv < 1e-15:
+            continue
+        
+        R[k:, :] -= (2.0 / vTv) * np.outer(v, v @ R[k:, :])
+        Q[:, k:] -= (2.0 / vTv) * np.outer(Q[:, k:] @ v, v)
+    
     return Q, R
 
 
-def extract_eigenvalues(Ak, n, eps=1e-8):
+def get_eigenvalues_from_quasi_triangular(Ak, n, eps=1e-8):
     eigenvalues = []
     i = 0
     while i < n:
@@ -106,48 +74,48 @@ def extract_eigenvalues(Ak, n, eps=1e-8):
         else:
             eigenvalues.append(complex(Ak[i, i], 0))
             i += 1
-    return eigenvalues
+    return np.array(eigenvalues)
 
 
 def qr_algorithm(A, eps, n, max_iter=10000, verbose=True):
     Ak = A.astype(float, copy=True)
-
-    def off_lower():
-        return np.max(np.abs(np.tril(Ak, k=-1)))
-
-    prev_err = None
+    prev_lambdas = None
     k = 0
 
     for k in range(1, max_iter + 1):
         Q, R = qr_householder(Ak, n)
         Ak = R @ Q
 
-        err = off_lower()
+        cur_lambdas = get_eigenvalues_from_quasi_triangular(Ak, n, eps=eps)
 
         if verbose and (k <= 5 or k % 20 == 0):
-            print(f"   итерация {k:>4}:  max|a_ij (i>j)| = {err:.3e}")
+            lambdas_str = ", ".join(f"{l.real:>7.3f}{l.imag:+.3f}j" for l in cur_lambdas)
+            print(f"   итерация {k:>4}: λ = [{lambdas_str}]")
 
-        if err < eps:
-            if verbose:
-                print(f"   сошлось на итерации {k}")
-            break
-
-        if prev_err is not None and abs(err - prev_err) < eps * 0.1:
-            if verbose:
-                print(f"   поддиагональ стабилизировалась на {err:.3e}")
-                print(f"   — есть блок 2x2 с комплексной парой")
-            break
-        prev_err = err
+        if prev_lambdas is not None:
+            sorted_cur = np.sort_complex(cur_lambdas)
+            sorted_prev = np.sort_complex(prev_lambdas)
+            diff = np.max(np.abs(sorted_cur - sorted_prev))
+            
+            if diff < eps:
+                if verbose:
+                    print(f"   Сошлось на итерации {k} (изменение λ < {eps})")
+                break
+        prev_lambdas = cur_lambdas
     else:
         if verbose:
-            print(f"   достигнут лимит итераций ({max_iter})")
+            print(f"   Достигнут лимит итераций ({max_iter})")
 
-    eigenvalues = extract_eigenvalues(Ak, n, eps=eps)
-    return np.array(eigenvalues), Ak, k
+    eigenvalues = get_eigenvalues_from_quasi_triangular(Ak, n, eps=eps)
+    return eigenvalues, Ak, k
 
 
 if __name__ == "__main__":
-    A, eps, n = read_matrix("D:/learning/numeric_methods/Lab1/1.5/input.txt")
+    import os
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    filename = os.path.join(script_dir, "input.txt")
+    A, eps, n = read_matrix(filename)
 
     print("=" * 60)
     print("ИСХОДНАЯ МАТРИЦА A")

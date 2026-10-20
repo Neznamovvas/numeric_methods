@@ -66,7 +66,11 @@ def sweep_method(a, b, c, d, n):
 
 
 if __name__ == "__main__":
-    a, b, c, d = read_tridiagonal("D:/learning/numeric_methods/Lab1/1.2/input.txt")
+    import os
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    filename = os.path.join(script_dir, "input.txt")
+    a, b, c, d = read_tridiagonal(filename)
     n = len(b)
 
     print("Исходные данные:")
